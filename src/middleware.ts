@@ -1,5 +1,4 @@
-import type { auth } from "@/lib/better-auth/auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import axios from "axios";
 import { Session } from "./lib/better-auth/auth-types";
 
@@ -7,15 +6,38 @@ async function getMiddlewareSession(req: NextRequest) {
   const { data: session } = await axios.get<Session>("/api/auth/get-session", {
     baseURL: req.nextUrl.origin,
     headers: {
-      cookie: req.headers.get("cookie") || "", // Forward the cookies from the request
+      //get the cookie from the request
+      cookie: req.headers.get("cookie") || "",
     },
   });
 
   return session;
 }
 
-export async function authmiddleware(req: NextRequest) {
-  const Session = getMiddlewareSession(req);
+export default async function authMiddleware(req: NextRequest) {
+  const session = await getMiddlewareSession(req);
+  const pathname = req.nextUrl.pathname;
+  const url = req.url;
+
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", url));
+  }
+
+  if (pathname.startsWith("/dashboard")) {
+    if (session) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.redirect(new URL("/sign-in", url));
+  }
+
+  if (pathname.startsWith("/sign-")) {
+    if (!session) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.redirect(new URL("/dashboard", url));
+  }
 
   return NextResponse.next();
 }
