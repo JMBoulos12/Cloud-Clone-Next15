@@ -103,3 +103,7 @@ const AuthForm = ({ action }: Props) => {
 };
 
 export default AuthForm;
+
+
+
+/* TEST */
